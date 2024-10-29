@@ -8,6 +8,7 @@ with open("/var/run/argo/token") as f:
 
 
 class Plugin(BaseHTTPRequestHandler):
+
     def args(self):
         return json.loads(self.rfile.read(int(self.headers.get('Content-Length'))))
 
@@ -30,15 +31,17 @@ class Plugin(BaseHTTPRequestHandler):
             return
 
         if self.path == '/api/v1/getparams.execute':
-            # args = self.args()['input']['parameters']
+            args = self.args()
             self.reply({
                 "output": {
                     "parameters": [
                         {
-                            "hello": "world",
+                            "key1": "val1",
+                            "key2": "val2"
                         },
                         {
-                            "hello": "again",
+                            "key1": "val2",
+                            "key2": "val2"
                         }
                     ]
                 }
