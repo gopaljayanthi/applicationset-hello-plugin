@@ -12,8 +12,15 @@ spec:
       labels:
         app.kubernetes.io/name: applicationset-hello-plugin
     spec:
+
       containers:
         - name: main
+          env:
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-token-secret  # Name of the secret containing the GITHUB_TOKEN
+                  key: GITHUB_TOKEN
           image: python:latest
           command: ["python"]
           args: ["/app/main.py"]

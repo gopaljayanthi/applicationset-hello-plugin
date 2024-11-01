@@ -1,10 +1,22 @@
 #!/usr/bin/env python3
 
 import json
+import sys
+import subprocess
+import logging
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from github import Github
 import base64
 import os
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+try:
+    from github import Github
+except ImportError:
+    # If not installed, install PyGithub
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyGithub"])
+    from github import Github  # Import again after installation
 
 # Read the token for authentication (modify the path if necessary)
 with open("/var/run/argo/token") as f:
@@ -27,11 +39,10 @@ def get_files_base64_encoded(token, repo_name, branch, folder_path):
     files_content = {}
     for content_file in contents:
         if content_file.type == "file":  # Ensure it's a file, not a subfolder
-            file_content = repo.get_contents(content_file.path, ref=branch)
-            files_content[content_file.path] = file_content.content  # Already base64 encoded
+            file_content = base64.b64encode(content_file.decoded_content).decode('utf-8')
+            files_content[content_file.name] = file_content
             
     return files_content
-
 
 class Plugin(BaseHTTPRequestHandler):
 
@@ -58,25 +69,42 @@ class Plugin(BaseHTTPRequestHandler):
 
         if self.path == '/api/v1/getparams.execute':
             args = self.args()
+            logging.info("Received input: %s", json.dumps(args))  # Log the full input for debugging
+
             try:
-                # Extract GitHub repo, branch, and folder from the POST request payload
-                repo_name = args['repo']
-                branch = args['branch']
-                folder = args['folder']
+                # Access nested parameters
+                parameters = args.get('input', {}).get('parameters', {})
+                repo_name = parameters.get('repo')
+                branch = parameters.get('branch')
+                folder = parameters.get('folder')
+
+                # Check for missing parameters
+                missing_params = [param for param in ['repo', 'branch', 'folder'] if parameters.get(param) is None]
+                if missing_params:
+                    raise KeyError(f"Missing parameter(s): {', '.join(missing_params)}")
 
                 # Call the function to get files' base64 content
                 files_base64_content = get_files_base64_encoded(GITHUB_TOKEN, repo_name, branch, folder)
+                configmap_name = os.path.basename(folder)
 
                 # Send the files' content as response
+                logging.info("Providing output: %s", json.dumps(files_base64_content))  # Log output contents
                 self.reply({
                     "output": {
-                        "files": files_base64_content
+                       "parameters": [
+                           {
+                              "name": configmap_name,
+                              "contents": files_base64_content
+                           }
+                       ]
                     }
                 })
 
             except KeyError as e:
-                self.reply({"error": f"Missing parameter: {str(e)}"})
+                logging.error("Missing parameter(s): %s", str(e))
+                self.reply({"error": f"Missing parameter(s): {str(e)}"})
             except Exception as e:
+                logging.error("Error occurred: %s", str(e), exc_info=True)
                 self.reply({"error": str(e)})
         else:
             self.unsupported()
@@ -84,5 +112,5 @@ class Plugin(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     httpd = HTTPServer(('', 4355), Plugin)
-    print("Server started at port 4355")
+    logging.info("Server started at port 4355")
     httpd.serve_forever()
