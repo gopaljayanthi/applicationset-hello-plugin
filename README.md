@@ -11,6 +11,9 @@ that you want to install the plugin Deployment in the `applicationset-hello-plug
 
 clone this repo, go to the base folder and run following command
 
+git checkout withgit
+
+
 ```bash
 kubectl apply -k .
 ```
