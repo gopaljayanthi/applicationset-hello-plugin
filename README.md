@@ -11,15 +11,21 @@ that you want to install the plugin Deployment in the `applicationset-hello-plug
 
 clone this repo, go to the base folder and run following command
 
-git checkout withgit
-
-
-```bash
-kubectl apply -k .
-```
+git checkout withgit  
   
 create a secret in the applicationset-hello-plugin namespace  
-kubectl -n applicationset-hello-plugin create secret generic github-token-secret --from-literal=GITHUB_TOKEN=yourgithubtoken
+kubectl -n applicationset-hello-plugin create secret generic github-token-secret --from-literal=GITHUB_TOKEN=yourgithubtoken  
+
+```bash
+kubectl apply -k .  
+```
+make sure all pods are up and running in the namespace applicationset-hello-plugin  
+
+kubectl -n applicationset-hello-plugin get po  
+
+apply the following appset yaml in argocd namespace  
+
+kubectl -n argocd apply -f plugin-appset.yaml
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
