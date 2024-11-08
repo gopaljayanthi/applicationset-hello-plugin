@@ -87,7 +87,6 @@ def post_message_to_slack(channel, text):
 
 @app.route('/webhook', methods=['POST'])
 
-
 def process_slack_event():
     app.logger.info("Webhook endpoint hit")
     if not verify_slack_request(request):
