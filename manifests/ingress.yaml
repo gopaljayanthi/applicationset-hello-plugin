@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  name: slack-bot-ingress
+  namespace: slack-bot
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: slack-bot.devops.opsmx.org
+    http:
+      paths:
+      - backend:
+          service:
+            name: slack-bot
+            port:
+              name: http
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - slack-bot.devops.opsmx.org
+    secretName: slack-bot-tls-certificate
