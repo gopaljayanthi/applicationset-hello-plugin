@@ -31,7 +31,8 @@ except ImportError:
 
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 app = Flask(__name__)
 
@@ -40,6 +41,7 @@ SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 slack_signing_secret = os.getenv("SLACK_SIGNING_SECRET")
 max_response_tokens = 200
+temperature = 0.95
 
 def verify_slack_request(req):
     timestamp = req.headers.get("X-Slack-Request-Timestamp")
@@ -80,21 +82,27 @@ def post_message_to_slack(channel, text):
     if response.status_code != 200 or not response.json().get("ok"):
         logging.error("Failed to send message to Slack: %s", response.text)
     else:
-        logging.info("Message sent to Slack channel %s: %s", channel, text)
+        #logging.info("Message sent to Slack channel %s: %s", channel, text)
+        logging.info("Message sent to Slack channel %s", channel)
 
 @app.route('/webhook', methods=['POST'])
 
 
-def url_verification():
+def process_slack_event():
     app.logger.info("Webhook endpoint hit")
     if not verify_slack_request(request):
         abort(403)  # Forbidden if verification fails
+
+            # Ignore retries by Slack
+    if request.headers.get("X-Slack-Retry-Num"):
+        return jsonify({"status": "Ignored retry"}), 200
+
     if request.content_type != 'application/json':
         app.logger.info("Received non-JSON content type")
         return jsonify({"error": "Invalid content type"}), 400
     data = request.get_json()
 
-    app.logger.info("Received POST data: %s", data)
+    #app.logger.info("Received POST data: %s", data)
 
     # Check if the necessary fields are in the request
     if data and 'challenge' in data and data.get("type") == "url_verification":
@@ -117,19 +125,19 @@ def url_verification():
                 "channel": channel_id,
                 "message": message_text
             }
-            logging.info("Received message event: %s", json.dumps(log_entry))
+            #logging.info("Received message event: %s", json.dumps(log_entry))
             #post_message_to_slack(channel_id, f"Echo: {message_text}")
-            response = get_chatgpt_response(message_text, max_response_tokens)
+            response = get_chatgpt_response(message_text, max_response_tokens, temperature)
             #return jsonify({"status": "Message received"}), 200
             
             formatted_response = f"```{response}```"  # Wrap in triple backticks
-            logging.info("choice of zero completion formatted: %s", formatted_response)
+            #logging.info("choice of zero completion formatted: %s", formatted_response)
             post_message_to_slack(event["channel"], formatted_response)
             return jsonify({"status": "message processed"}), 200
             #return response, 200
 
         if event['type'] == 'message' and event.get('user') == BOT_USER_ID:
-            logging.info("Received message from this bot: %s")
+            #logging.info("Received message from this bot, skipping: %s")
             return jsonify({"status": "Message was from this bot"}), 200
     
     # If the request does not have the required fields, return a 400 Bad Request
@@ -141,7 +149,7 @@ def page_not_found(e):
     return jsonify({"error": "Bad Request"}), 400
 
 # Function to get response from ChatGPT
-def get_chatgpt_response(message_text, max_response_tokens):
+def get_chatgpt_response(message_text, max_response_tokens, temperature):
     try:
        client = OpenAI(
            # This is the default and can be omitted
@@ -156,12 +164,14 @@ def get_chatgpt_response(message_text, max_response_tokens):
                 }
             ],
             model="gpt-4o",
+            max_tokens=max_response_tokens,
+            temperature=temperature
        )
 
        #chatgpt_response = completion.choices[0].message["content"]
-       logging.info("Received chatgpt repsonse: %s", completion)
+       #logging.info("Received chatgpt repsonse: %s", completion)
        chatgpt_response = completion.choices[0].message.content
-       logging.info("content of chatgpt response: %s", chatgpt_response)
+       #logging.info("content of chatgpt response: %s", chatgpt_response)
        return chatgpt_response
     except Exception as e:
         print("Error communicating with OpenAI:", e)  # Print detailed error
