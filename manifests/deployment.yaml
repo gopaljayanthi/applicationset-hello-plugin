@@ -1,43 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: applicationset-hello-plugin
-  namespace: applicationset-hello-plugin
+  name: slack-bot
+  namespace: slack-bot
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: applicationset-hello-plugin
+      app.kubernetes.io/name: slack-bot
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: applicationset-hello-plugin
+        app.kubernetes.io/name: slack-bot
     spec:
 
       containers:
         - name: main
-          env:
-            - name: GITHUB_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: github-token-secret  # Name of the secret containing the GITHUB_TOKEN
-                  key: GITHUB_TOKEN
           image: python:latest
           command: ["python"]
           args: ["/app/main.py"]
           ports:
-            - containerPort: 4355
+            - containerPort: 5000
               name: http
           volumeMounts:
-            - mountPath: /var/run/argo/token
-              name: token
-              subPath: token
-            - name: hello-plugin-script
+            - name: slack-bot-script
               mountPath: "/app/main.py"
               subPath: "main.py"
       volumes:
-        - name: token
-          secret:
-            secretName: applicationset-hello-plugin
-        - name: hello-plugin-script
+        - name: slack-bot-script
           configMap:
-            name: hello-plugin-script
+            name: slack-bot-script
