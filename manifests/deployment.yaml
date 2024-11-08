@@ -28,4 +28,4 @@ spec:
       volumes:
         - name: slack-bot-script
           configMap:
-            name: slack-bot-script
+            name: slack-bot

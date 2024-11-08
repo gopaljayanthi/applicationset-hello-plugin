@@ -15,7 +15,7 @@ spec:
           service:
             name: slack-bot
             port:
-              name: http
+              number: 80
         path: /
         pathType: Prefix
   tls:

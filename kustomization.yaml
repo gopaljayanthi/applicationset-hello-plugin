@@ -1,13 +1,11 @@
 resources:
-  - manifests/applicationset-secret.yaml
-  - manifests/configmap.yaml
   - manifests/deployment.yaml
   - manifests/namespace.yaml
-  - manifests/plugin-secret.yaml
   - manifests/service.yaml
+  - manifests/ingress.yaml
 
 configMapGenerator:
-  - name: hello-plugin-script
-    namespace: applicationset-hello-plugin
+  - name: slack-bot
+    namespace: slack-bot
     files:
       - main.py=main.py

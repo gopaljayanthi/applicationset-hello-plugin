@@ -1,4 +1,14 @@
-from flask import Flask, request, jsonify
+import subprocess
+import sys
+try:
+    from flask import Flask, request, jsonify
+except ImportError:
+    # If not installed, install PyGithub
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
+    from flask import Flask, request, jsonify  # Import again after installation
+
+
+
 
 app = Flask(__name__)
 
@@ -20,4 +30,5 @@ def page_not_found(e):
     return jsonify({"error": "Bad Request"}), 400
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
