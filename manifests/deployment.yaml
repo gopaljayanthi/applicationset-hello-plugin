@@ -15,6 +15,22 @@ spec:
 
       containers:
         - name: main
+          env:
+            - name: SLACK_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: slack-bot-token  # Name of the secret containing the slack-bot-token
+                  key: SLACK_BOT_TOKEN
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: open-api-key  # Name of the secret containing the open api key
+                  key: OPENAI_API_KEY
+            - name: SLACK_SIGNING_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: slack-signing-secret  # Name of the secret containing the open api key
+                  key: SLACK_SIGNING_SECRET
           image: python:latest
           command: ["python"]
           args: ["/app/main.py"]
