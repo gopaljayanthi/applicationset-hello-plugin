@@ -101,7 +101,7 @@ def process_slack_event():
         return jsonify({"error": "Invalid content type"}), 400
     data = request.get_json()
 
-    #app.logger.info("Received POST data: %s", data)
+    app.logger.info("Received POST data: %s", data)
 
     # Check if the necessary fields are in the request
     if data and 'challenge' in data and data.get("type") == "url_verification":
