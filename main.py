@@ -69,13 +69,14 @@ def verify_slack_request(req):
     return hmac.compare_digest(my_signature, slack_signature)
 
 
-def post_message_to_slack(channel, text):
+def post_message_to_slack(channel, text, thread_ts=None):
     """Posts a message back to the Slack channel."""
     url = "https://slack.com/api/chat.postMessage"
     headers = {"Authorization": f"Bearer {SLACK_BOT_TOKEN}", "Content-Type": "application/json"}
     payload = {
         "channel": channel,
-        "text": text
+        "text": text,
+        "thread_ts": thread_ts
     }
     response = requests.post(url, headers=headers, json=payload)
     
@@ -117,12 +118,14 @@ def process_slack_event():
             message_text = event["text"]
             user_id = event["user"]
             channel_id = event["channel"]
+            thread_ts = event.get("ts")
 
             # Log message details
             log_entry = {
                 "user": user_id,
                 "channel": channel_id,
                 "message": message_text
+                "thread_ts": thread_ts
             }
             #logging.info("Received message event: %s", json.dumps(log_entry))
             #post_message_to_slack(channel_id, f"Echo: {message_text}")
@@ -131,7 +134,7 @@ def process_slack_event():
             
             formatted_response = f"```{response}```"  # Wrap in triple backticks
             #logging.info("choice of zero completion formatted: %s", formatted_response)
-            post_message_to_slack(event["channel"], formatted_response)
+            post_message_to_slack(event["channel"], formatted_response, thread_ts)
             return jsonify({"status": "message processed"}), 200
             #return response, 200
 
