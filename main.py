@@ -124,7 +124,7 @@ def process_slack_event():
             log_entry = {
                 "user": user_id,
                 "channel": channel_id,
-                "message": message_text
+                "message": message_text,
                 "thread_ts": thread_ts
             }
             #logging.info("Received message event: %s", json.dumps(log_entry))
